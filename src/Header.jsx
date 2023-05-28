@@ -1,10 +1,10 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { NavLink, Navigate } from "../node_modules/react-router-dom/dist/index";
 import { axios } from '../node_modules/@bundled-es-modules/axios';
 import { UserContext } from "./UserContext";
 
 export default function Header() {
-    const {user} = useContext(UserContext);
+    const {user, ready} = useContext(UserContext);
     const [redirect, setRedirect] = useState(false);
 
     function logout() {
@@ -12,7 +12,16 @@ export default function Header() {
         setRedirect(true);
     }
 
+    console.log("Header", user, ready);
+
+    useEffect(() => {
+        if ((user == null || user == 'EXPIRED') && ready == true) {
+          setRedirect(true);
+        }
+    }, [user, ready]);
+
     if (redirect) {
+        console.log("Nav to login");
         return <Navigate to={"/login"}/>
     }
 

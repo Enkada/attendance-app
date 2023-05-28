@@ -24,8 +24,7 @@ export default function TeacherListPage() {
         
         axios.post("/users", formData)
         .then((response) => {
-            console.log(response);
-            // do something with the response, like redirect to a success page
+            axios.get("/users").then((response) => {  setUsers(response.data.data); });
         })
         .catch((error) => {
             console.error(error);

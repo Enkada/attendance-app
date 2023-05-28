@@ -21,7 +21,9 @@ export default function GroupPage() {
     
     const [ignoredStudents, setIgnoredStudents] = useState([]);
 
-    const [ignoredLessons, setIgnoredLessons] = useState([]);    
+    const [ignoredLessons, setIgnoredLessons] = useState([]); 
+
+    const [isFakeDataDisplayed, setIsFakeDataDisplayed] = useState(false);    
     
     const handleLessonCheckboxChange = (lesson, isChecked) => {
         if (isChecked) {
@@ -101,7 +103,6 @@ export default function GroupPage() {
 
     students.forEach((student, index) => {
         let studentPassages = passages.filter(x => x.student_id == student.id);
-        console.log(studentPassages);
         
         let startDate = range.start >= 1 ? moment([calendarYear, calendarMonth, range.start]) : moment([calendarYear, calendarMonth, 1]).subtract(-1 * range.start + 1, "days");
         let daysInMonth = moment([calendarYear, calendarMonth, 1]).daysInMonth();
@@ -118,24 +119,26 @@ export default function GroupPage() {
             }
             
         }
-        else if (Math.random() > .2) {
+        else if (isFakeDataDisplayed && (Math.random() > .2)) {
             total.minutes += Math.round(Math.random() * (1070 - 270)) + 270;
             total.skippedClassCount += Math.round((1170 - total.minutes) / 90);
             total.classCount += 13;
         }
-        else {
+        else if (isFakeDataDisplayed) {
             total.classCount += 13;
             total.skippedClassCount += 13;
         }
         let isIgnored = ignoredStudents.find(x => x == student.fullname);
 
-        if (!isIgnored)
+        if (!isIgnored && total.classCount > 0)
             totalPercentage += total.minutes / (total.classCount * 90);
 
         studentList.push(
             <div className="student" key={student.id} style={{['--skipped']: total.skippedClassCount}}>
                 <div className="student__index">{index + 1}</div>
                 <Link to={`/student/${student.id}/${translit(student.fullname)}`} className="student__fullname" key={student.id}>{student.fullname}</Link>
+                {(!!passages.length && !!timetables.length) &&
+                <>
                 <div className="student__stat-list">
                     {!!total.classCount && <>
                         <div>{total.classCount - total.skippedClassCount} / {total.classCount} </div>
@@ -146,6 +149,7 @@ export default function GroupPage() {
                     </>}
                 </div>
                 <input type="checkbox" onChange={(e) => handleCheckboxChange(student.fullname, e.target.checked)}/>
+                </>}
             </div>
         );
     });
@@ -165,37 +169,51 @@ export default function GroupPage() {
     return (
         <>
             <h1>Группа {name}</h1>
-            <h2>Список студентов</h2>
-            <div className='group-period'>Статистика за период {getStatRangeText()}</div>
-            <div className="group-percentage">Процент общей посещаемости группы за период - {Math.round(totalPercentage / (students.length - ignoredStudents.length) * 100)}%</div>            
-            <div className="btn-list">
-                <div onClick={handleToggleIgnoredList} id='btn-toggle-ignored' className='btn--material-icons'><span className='material-icons'>rule</span>Игнорируемые предметы </div>
-            </div>
-            <div className="ignored-lessons" style={{['display']: "none"}}>
-                {Array.from(periodLessons).map((lesson, index) => (
-                    <div key={index}>
-                        <input type='checkbox' id={"cb-lesson-" + index} value={lesson} onChange={(e) => handleLessonCheckboxChange(lesson, e.target.checked)}></input>
-                        <label htmlFor={"cb-lesson-" + index}>{lesson}</label>
+            <section>
+                <h2>Список студентов</h2>
+                {(!!passages.length && !!timetables.length) &&
+                <>
+                <div className='group-period'>Статистика за период {getStatRangeText()}</div>
+                <input type="checkbox" className='cb-fake-data' onChange={(e) => {setIsFakeDataDisplayed(e.target.checked); console.log(e.target.checked);}}/>
+                <div className="group-percentage">Процент общей посещаемости группы за период - {Math.round(totalPercentage / (students.length - ignoredStudents.length) * 100)}%</div>            
+                <div className="btn-list">
+                    <div onClick={handleToggleIgnoredList} id='btn-toggle-ignored' className='btn--material-icons'><span className='material-icons'>rule</span>Игнорируемые предметы </div>
+                </div>
+                <div className="ignored-lessons" style={{['display']: "none"}}>
+                    {Array.from(periodLessons).map((lesson, index) => (
+                        <div key={index}>
+                            <input type='checkbox' id={"cb-lesson-" + index} value={lesson} onChange={(e) => handleLessonCheckboxChange(lesson, e.target.checked)}></input>
+                            <label htmlFor={"cb-lesson-" + index}>{lesson}</label>
+                        </div>
+                    ))}
+                </div>
+                </>
+                }
+                <div className="student-table">
+                    <div className="student-table__header">
+                        <div>№</div>
+                        <div>ФИО</div>
+                        {(!!passages.length || !!timetables.length) && <>
+                        <div>Посещено</div>
+                        <div>Пропущено</div>
+                        <div>Посещено, мин.</div>
+                        <div>Процент</div>
+                        </>}
                     </div>
-                ))}
-            </div>
-            <div className="student-table">
-                <div className="student-table__header">
-                    <div>№</div>
-                    <div>ФИО</div>
-                    <div>Посещено</div>
-                    <div>Пропущено</div>
-                    <div>Посещено, мин.</div>
-                    <div>Процент</div>
+                    <div className="student-table__list">
+                        {studentList} 
+                    </div>
                 </div>
-                <div className="student-table__list">
-                    {studentList} 
-                </div>
-            </div>
-            <h2>Выбор периода</h2>
-            <PeriodSelector timetables={timetables} passages={passages} onYearChange={handleYearChange} onMonthChange={handleMonthChange} onRangeChange={handleRangeChange}></PeriodSelector>
-            <h2>Расписание группы</h2>
-            <GroupTimetable/>
+                
+            </section>
+            {(!!passages.length && !!timetables.length) && <section>
+                <h2>Выбор периода</h2>
+                <PeriodSelector timetables={timetables} passages={passages} isGroup={true} onYearChange={handleYearChange} onMonthChange={handleMonthChange} onRangeChange={handleRangeChange}></PeriodSelector>
+            </section>}
+            <section>
+                <h2>Расписание группы</h2>
+                {timetables.length ? <GroupTimetable/> : <span>Расписание не найдено. <Link to="/import">Ипортируйте</Link> файлы расписания занятий.</span>}                
+            </section>
         </>
     )
 }

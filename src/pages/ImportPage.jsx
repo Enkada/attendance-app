@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 export default function ImportPage() {      
     const [groups, setGroups] = useState(() => { 
         console.log('initial groups');
-        return [{ name: "test" }]; 
+        return []; 
     });
     const [students, setStudents] = useState([]);
     const [timetable, setTimetable] = useState([]);
@@ -41,6 +41,7 @@ export default function ImportPage() {
                 setGroups([]);
                 axios.delete('/groups');
                 axios.delete('/students');
+                axios.delete('/users/groups/all');
             },
             isLoading: true,
             icon: "groups",
@@ -93,57 +94,64 @@ export default function ImportPage() {
         let files = e.target.files, f = files[0];
         let reader = new FileReader();
         reader.onload = function (e) {
-            let data = e.target.result;
-            let workbook = XLSX.read(data, {type: 'binary'});
-
-            axios.delete('/groups').then(() => {
-                axios.delete('/students').then(() => {
-                    let groupSize = workbook.SheetNames.length - 1;
-                    let groupIndex = 0;
-
-                    let newState = {...importSections};
-                    newState.xlsx.isLoading = true;
-                    setImportSectiions(newState);
-
-                    for (const sheetName of workbook.SheetNames) {
-                        if (sheetName == 'ОТЧИСЛЕННЫЕ') continue;
-                        console.log('group', sheetName);
-        
-                        axios.post('/groups', { name: sheetName, year: sheetName[0] }).then(response => {    
+            try {
+                let data = e.target.result;
+                let workbook = XLSX.read(data, {type: 'binary'});
+    
+                let groupSize = workbook.SheetNames.length - 1;
+                let groupIndex = 0;
+    
+                let newState = {...importSections};
+                newState.xlsx.isLoading = true;
+                setImportSectiions(newState);
+    
+                for (const sheetName of workbook.SheetNames) {
+                    if (sheetName == 'ОТЧИСЛЕННЫЕ') continue;
+                    console.log('group', sheetName);
+    
+                    axios.post('/groups', { name: sheetName, year: sheetName[0] }).then(response => {  
+                        try {
                             let worksheet = workbook.Sheets[sheetName];
                             const groupStudentsData = XLSX.utils.sheet_to_json(worksheet);
-
+        
                             let studentSize = groupStudentsData.length;
                             let studentIndex = 0;
                             for (const student of groupStudentsData) {  
                                 let studentData = { fullname: student['ФИО'].trim(), group_id: response.data.results.insertId };
                                 axios.post('/students', studentData).then(function (response) {
-                                    studentIndex++;            
-                                    //console.log('student', studentIndex, studentSize);                  
-
+                                    studentIndex++;                            
+        
                                     if (studentIndex == studentSize) {
                                         groupIndex++;
-                                        //console.log('group', groupIndex, groupSize);
-
+        
                                         if (groupIndex == groupSize) {
                                             console.log('complete');
-
+        
                                             importSections.xlsx.request();
                                         }
                                     }
                                 });  
                             }
-                        });
-                    }
-                });
-            });
+                        }  
+                        catch (err) {
+                            alert("Ошибка импортирования", err);
+                            importSections.xlsx.delete();
+                            return;
+                        }
+                        
+                    });
+                }
+            }
+            catch (err) {
+                alert("Ошибка импортирования", err);
+                return;
+            }
 
         };
         reader.readAsBinaryString(f)
     }
 
     useEffect(() => {
-        console.log('useEffect ran');
         importSections.xlsx.request();
         importSections.htm.request();
         importSections.docx.request();
@@ -184,143 +192,146 @@ export default function ImportPage() {
         setImportSectiions(newState);
     }, [passages]);
 
-    const handleImportHTM = (e) => {
+    const handleImportHTM = async (e) => {
         console.log('HTML', groups);
         let files = e.target.files, f = files[0];
         
 
         let fr = new FileReader();
-        fr.onload = () => {
-            let timetableData = $(fr.result);            
+        fr.onload = async () => {
+            let timetableData = $(fr.result);         
+              
             
-            axios.delete('/timetables').then(() => {
-                let size = timetableData.find('p').length;
+            let size = timetableData.find('p').length;
 
-                let newState = {...importSections};
-                newState.htm.isLoading = true;
-                setImportSectiions(newState);
-                
-                setTimeout(() => {
-                    importSections.htm.request();
-                }, 5000);
+            let newState = {...importSections};
+            newState.htm.isLoading = true;
+            setImportSectiions(newState);
 
-                for (let index = 0; index < size; index++) {
-                    const title = $(timetableData.find('p font')[index]).html();
-                    const titleMatch = title.match(/РАСПИСАНИЕ ГРУППЫ (.*?) неделя  с (.*?) по (.*)/);
-                    const groupName = titleMatch[1].replace('/', '-');
-                    const dateStart = moment(titleMatch[2], "DD/MM/YYYY");
-                    const dateEnd = moment(titleMatch[2], "DD/MM/YYYY");
+            for (let index = 0; index < size; index++) {
+                const title = $(timetableData.find('p font')[index]).html();
+                const titleMatch = title.match(/РАСПИСАНИЕ ГРУППЫ (.*?) неделя  с (.*?) по (.*)/);
+                const groupName = titleMatch[1].replace('/', '-');
+                const dateStart = moment(titleMatch[2], "DD/MM/YYYY");
+                const dateEnd = moment(titleMatch[2], "DD/MM/YYYY");
 
-                    if (!groups.some(x => x.name == groupName)) {
-                        continue;
-                    }
+                if (!groups.some(x => x.name == groupName)) {
+                    continue;
+                }
 
-                    let timetable = [{date: dateStart.toDate(), classes: {}}];
+                let timetable = [{date: dateStart.toDate(), classes: {}}];
 
-                    for (let i = 1; i < 6; i++) {
-                        timetable.push({ date: dateStart.add('days', 1).toDate(), classes: {}});
-                    }
+                for (let i = 1; i < 6; i++) {
+                    timetable.push({ date: dateStart.add('days', 1).toDate(), classes: {}});
+                }
 
-                    const table = timetableData.find('table tbody')[index];
-                    $(table).find('tr:not(:first-of-type)').each(function (i, value) {
-                        let classIndex = $(value).find('td:first-of-type').html();
-                        $(value).find('td:nth-child(n + 3)').each(function (i, value) {
-                            let className = $(value).html() == '-------' ? null : $(value).html();
-                            timetable[i].classes[classIndex] = className;
-                        }); 
-                    });           
+                const table = timetableData.find('table tbody')[index];
+                $(table).find('tr:not(:first-of-type)').each(function (i, value) {
+                    let classIndex = $(value).find('td:first-of-type').html();
+                    $(value).find('td:nth-child(n + 3)').each(function (i, value) {
+                        let className = $(value).html() == '-------' ? null : $(value).html();
+                        timetable[i].classes[classIndex] = className;
+                    }); 
+                });           
 
-                    timetable.forEach(day => {
+                await Promise.all(
+                    timetable.map(async (day) => {
                         let notNullCounter = 0;
                         Object.keys(day.classes).forEach(classIndex => {
                             if (day.classes[classIndex]) notNullCounter++
                         });
 
                         if (notNullCounter > 0) {
-                            axios.post('/timetables', { group: groupName, date: moment(day.date).format('YYYY-MM-DD') }).then(response => { 
-                                Object.keys(day.classes).forEach(classIndex => {
-                                    if (day.classes[classIndex]) {
-                                        axios.post(`/timetables/${response.data.results.insertId}`, { index: classIndex, class: day.classes[classIndex] });
-                                    }
-                                });                                 
+                            const response = await axios.post('/timetables', {
+                                group: groupName,
+                                date: moment(day.date).format('YYYY-MM-DD'),
                             });
+                  
+                            await Promise.all(
+                                Object.keys(day.classes).map(async (classIndex) => {
+                                    if (day.classes[classIndex]) {
+                                    await axios.post(`/timetables/${response.data.results.insertId}`, {
+                                        index: classIndex,
+                                        class: day.classes[classIndex],
+                                    });
+                                    }
+                                })
+                            );
                                                     
                         }
-                    }); 
-                }        
-            }); 
-            
+                    })
+                );                
+            }        
+            importSections.htm.request();
         }
         fr.readAsText(f, 'CP1251');
     }
 
-    const handleImportDOCX = (e) => {
+    const handleImportDOCX = async (e) => {
         
         let newState = {...importSections};
         newState.docx.isLoading = true;
         setImportSectiions(newState);
 
-        setTimeout(() => {
-            importSections.docx.request();
-        }, 5000);
-        
-        for (let index = 0; index < e.target.files.length; index++) {
-            const f = e.target.files[index];
-            let reader = new FileReader();
-            reader.onload = function (e) {
-                let data = e.target.result;
+        const filePromises = Array.from(e.target.files).map((file) => {
+            return new Promise((resolve) => {
+                let reader = new FileReader();
+                reader.onload = async function (e) {
+                    let data = e.target.result;
                 
-                const zip = new PizZip(data);
-                const xml = str2xml(zip.files["word/document.xml"].asText());
-
-                const paragraphsXml = xml.getElementsByTagName("w:p");
-                let prevParagraphs = [];
-                let studentName = null;
-
-                for (let i = 0, len = paragraphsXml.length; i < len; i++) {
-                    let fullText = "";
-                    const textsXml =
-                        paragraphsXml[i].getElementsByTagName("w:t");
-                    for (let j = 0, len2 = textsXml.length; j < len2; j++) {
-                        const textXml = textsXml[j];
-                        if (textXml.childNodes) {
-                            fullText += textXml.childNodes[0].nodeValue;
-                        }
-                    }
-
-                    if (fullText.includes('Дата:')) {
-                        if (!studentName) {
-                            studentName = prevParagraphs[0];
-                            prevParagraphs[0].match(/ [а-я]/g).forEach((match) => {
-                                studentName = studentName.replace(match, match.trim());
-                            });
-                            //console.log(studentName.trim());
-
-                            let studentData = students.find(x => x.fullname == studentName.trim());
-                            if (!studentData) {
-                                console.log('NOT FOUND STUDENT', studentName.trim());
-                                break;
-                            }
-                            else {
-                                console.log(studentData.id);
+                    const zip = new PizZip(data);
+                    const xml = str2xml(zip.files["word/document.xml"].asText());
+    
+                    const paragraphsXml = xml.getElementsByTagName("w:p");
+                    let prevParagraphs = [];
+                    let studentName = null;
+    
+                    for (let i = 0, len = paragraphsXml.length; i < len; i++) {
+                        let fullText = "";
+                        const textsXml =
+                            paragraphsXml[i].getElementsByTagName("w:t");
+                        for (let j = 0, len2 = textsXml.length; j < len2; j++) {
+                            const textXml = textsXml[j];
+                            if (textXml.childNodes) {
+                                fullText += textXml.childNodes[0].nodeValue;
                             }
                         }
-                        let passageMatch = fullText.match(/Дата: (.*); Время: (.*); Область: (.*)/);
-                        let dateTime = moment(`${passageMatch[1]} ${passageMatch[2]}`, "DD.MM.YYYY HH:mm:ss").format('YYYY-MM-DD HH:mm:ss');
-                        let isEnter = prevParagraphs[2].includes('вход');
-                        //console.log(dateTime, isEnter * 1, passageMatch[3]);
-                        axios.post('/passages', { student: studentName.trim(), building: passageMatch[3], datetime: dateTime, type: isEnter * 1 });
+    
+                        if (fullText.includes('Дата:')) {
+                            if (!studentName) {
+                                studentName = prevParagraphs[0];
+                                prevParagraphs[0].match(/ [а-я]/g).forEach((match) => {
+                                    studentName = studentName.replace(match, match.trim());
+                                });
+    
+                                let studentData = students.find(x => x.fullname == studentName.trim());
+                                if (!studentData) {
+                                    console.log('NOT FOUND STUDENT', studentName.trim());
+                                    break;
+                                }
+                                else {
+                                    console.log(studentData.id);
+                                }
+                            }
+                            let passageMatch = fullText.match(/Дата: (.*); Время: (.*); Область: (.*)/);
+                            let dateTime = moment(`${passageMatch[1]} ${passageMatch[2]}`, "DD.MM.YYYY HH:mm:ss").format('YYYY-MM-DD HH:mm:ss');
+                            let isEnter = prevParagraphs[2].includes('вход');
+                            await axios.post('/passages', { student: studentName.trim(), building: passageMatch[3], datetime: dateTime, type: isEnter * 1 });
+                        }
+                        
+                        prevParagraphs[2] = prevParagraphs[1];
+                        prevParagraphs[1] = prevParagraphs[0];
+                        prevParagraphs[0] = fullText;
                     }
-                    
-                    prevParagraphs[2] = prevParagraphs[1];
-                    prevParagraphs[1] = prevParagraphs[0];
-                    prevParagraphs[0] = fullText;
-                }
-            };
-            reader.readAsBinaryString(f)
-        }
+                    resolve();
+                };
+                reader.readAsBinaryString(file);
+            });
+        });
 
+        await Promise.all(filePromises);
         
+        importSections.docx.request();      
     }
 
     function str2xml(str) {
@@ -338,24 +349,30 @@ export default function ImportPage() {
                 <div className='import-form'>
                     {Object.keys(importSections).map((section) => (
                         <div className="import-form__section" key={section}>
-                            <div className="import-form__section__title"><span className="material-icons">{importSections[section].icon}</span>{importSections[section].title}</div>
+                            <div className="import-form__section__title"><span className="material-icons">{importSections[section].icon}</span>{importSections[section].title}</div>                            
                             {importSections[section].isLoading ? <div className="loading">Загрузка</div> :
-                                importSections[section].counter > 0 || importSections[section].counter?.students > 0 ? <>
-                                    <div className="import-form__section__counter">{importSections[section].getStatus()}</div>
-                                    <span className="material-icons btn" onClick={(e) => importSections[section].delete(e)}>delete</span>
-                                </> :
-                                    section != "xlsx" ? 
-                                        groups.length > 0 ?
-                                            <input type="file" accept={importSections[section].accept} onChange={
-                                                section == "xlsx" ? (e) => handleImportXLSX(e) : section == "htm" ? (e) => handleImportHTM(e) : (e) => handleImportDOCX(e)
-                                            } multiple={section == "docx"}/> 
-                                        : <div className="gray">Загрузите контингент</div>
+                                section != "xlsx" ? 
+                                    groups.length > 0 ?
+                                        <>
+                                        {importSections[section].counter > 0 ? <>
+                                            <div className="import-form__section__counter">{importSections[section].getStatus()}</div>
+                                            <span className="material-icons btn" onClick={(e) => importSections[section].delete(e)}>delete</span>
+                                        </> : ""}                                        
+                                        <input type="file" accept={importSections[section].accept} onChange={
+                                            section == "xlsx" ? (e) => handleImportXLSX(e) : section == "htm" ? (e) => handleImportHTM(e) : (e) => handleImportDOCX(e)
+                                        } multiple={section == "docx"}/>
+                                        </> 
+                                    : <div className="gray">Загрузите контингент</div>
+                                :
+                                    importSections[section].counter?.students > 0 || importSections[section].counter?.groups > 0 ? <>
+                                        <div className="import-form__section__counter">{importSections[section].getStatus()}</div>
+                                        <span className="material-icons btn" onClick={(e) => importSections[section].delete(e)}>delete</span>
+                                    </>
                                     :
                                         <input type="file" accept={importSections[section].accept} onChange={
                                             section == "xlsx" ? (e) => handleImportXLSX(e) : section == "htm" ? (e) => handleImportHTM(e) : (e) => handleImportDOCX(e)
-                                        } multiple={section == "docx"}/> 
-                        
-                            }                            
+                                        } multiple={section == "docx"}/>                         
+                            } 
                                                  
                         </div>
                     ))}

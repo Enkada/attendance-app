@@ -18,6 +18,10 @@
   color: var(--clr-text);
 }
 
+body {
+  overflow-x: hidden;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -85,6 +89,7 @@ input[type=text], input[type=search], input[type=password] {
   top: 50%;
   left: 50%;
   translate: -50% -50%;
+  animation: fadeInAnimation 0.5s ease forwards;
 }
 
 .period-selector {
@@ -178,6 +183,7 @@ input[type=text], input[type=search], input[type=password] {
   width: 100%;
   background-color: var(--clr-bg);
   justify-content: space-between;
+  height: 60px;
 }
 .nav__profile {
   display: flex;
@@ -198,6 +204,7 @@ input[type=text], input[type=search], input[type=password] {
   text-decoration: none;
   padding: 1em;
   color: var(--clr-text);
+  animation: opacity 0.5s ease forwards;
 }
 .nav__link-list__item.active {
   background-color: white;
@@ -222,8 +229,36 @@ main {
   margin: auto;
   padding: 1em;
 }
+main section {
+  opacity: 0;
+  animation: opacity 0.3s ease forwards 0.3s;
+}
 
-h1, h2 {
+@keyframes header {
+  from {
+    translate: -100px 0;
+    opacity: 0;
+  }
+  to {
+    translate: 0px 0;
+    opacity: 1;
+  }
+}
+@keyframes opacity {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+h1 {
+  margin-bottom: 1em;
+  animation: header 0.5s ease forwards;
+  opacity: 0;
+}
+
+h2 {
   margin-bottom: 1em;
 }
 
@@ -274,9 +309,14 @@ h1, h2 {
 .student-table__list .student__index {
   width: 1.2em;
   text-align: right;
+  color: var(--clr-accent);
 }
 .student-table__list .student__fullname {
   text-decoration: none;
+  color: var(--clr-text);
+}
+.student-table__list .student__fullname:hover {
+  text-decoration: underline;
 }
 .student-table__list .student__progressbar[role=progressbar] {
   --fg: hsl(max(0deg, calc(120deg - var(--skipped) * 8deg)), 100%, 30%);
@@ -290,11 +330,11 @@ h1, h2 {
 
 @keyframes fadeInAnimation {
   0% {
-    translate: 0 8px;
+    transform: translate(0, 8px);
     opacity: 0;
   }
   100% {
-    translate: 0 0px;
+    translate: translate(0, 0px);
     opacity: 1;
   }
 }
@@ -425,6 +465,7 @@ h1, h2 {
 
 a {
   text-decoration: none;
+  color: var(--clr-accent);
 }
 a:hover {
   text-decoration: underline;
@@ -447,6 +488,9 @@ a:hover {
   display: grid;
   grid-template-columns: 300px auto;
   padding: 0.5em;
+}
+.student-search__student a {
+  color: var(--clr-text);
 }
 .student-search__student:nth-child(2n) {
   background-color: var(--clr-bg);
@@ -618,6 +662,7 @@ a:hover {
   border: 2px solid var(--clr-accent);
   cursor: pointer;
   text-decoration: none;
+  color: var(--clr-text);
 }
 .group-list .group-year .group:hover {
   scale: 1.1;
@@ -742,6 +787,16 @@ a:hover {
   text-decoration: none !important;
 }
 
+.cb-fake-data {
+  position: absolute;
+  right: 1em;
+  top: 5em;
+  opacity: 0;
+}
+.cb-fake-data:hover {
+  opacity: 1;
+}
+
 .import-form {
   display: flex;
   flex-direction: column;
@@ -750,7 +805,7 @@ a:hover {
 }
 .import-form__section {
   display: grid;
-  grid-template-columns: 180px max-content min-content;
+  grid-template-columns: 180px 220px min-content auto;
   align-items: center;
   height: 2em;
   gap: 0.5em;

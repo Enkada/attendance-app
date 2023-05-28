@@ -5,7 +5,7 @@ export default function PeriodSelector(props) {
     if (!props)
         return;
 
-    let { passages, timetables, onRangeChange, onYearChange, onMonthChange } = props;
+    let { passages, timetables, onRangeChange, onYearChange, onMonthChange, isGroup } = props;
 
     const [isCustomPeriod, setIsCustomPeriod] = useState(false);
     
@@ -62,7 +62,7 @@ export default function PeriodSelector(props) {
                         <div>Сб</div>
                         <div>Вс</div>
                     </div>
-                    <CalendarGrid timetables={timetables} passages={passages} year={calendarYear} month={calendarMonth} onRangeChange={handleRangeChange}></CalendarGrid>
+                    <CalendarGrid timetables={timetables} isGroup={isGroup} passages={passages} year={calendarYear} month={calendarMonth} onRangeChange={handleRangeChange}></CalendarGrid>
                 </div>
             </div>
         </div>
@@ -101,7 +101,7 @@ function CalendarGrid(props) {
         else if (hasLessons) {
             return "no-passages";
         }
-        else if (hasPassages) {
+        else if (hasPassages && !props.isGroup) {
             return "no-lessons"
         }
         else {

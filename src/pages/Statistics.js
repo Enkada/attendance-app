@@ -113,10 +113,81 @@ export function getStudentStatRanges(timetables, passages, date, ignoredLessons 
     totalStats.percentage = Math.min(totalStats.minutes / (90 * totalStats.classCount), 1)
     totalStats.minutes = Math.min(totalStats.minutes, totalStats.classCount * 90);
 
-    //console.log(date, dayPassages, dayLessons, { total: totalStats, classes: classesStats, ranges: rangeSet });
     return { total: totalStats, classes: classesStats, ranges: rangeSet, enterExitPairs: enterExitPairs };
 }
 
+export function getStudentStatRangesPeriod(timetables, passages, period, ignoredLessons = []) {
+    let stats = {};
+    let currentDate = moment(period.start, "DD.MM.YY");
+    let endDate = moment(period.end, "DD.MM.YY");
+
+    let totalStats = {
+        minutes: 0, percentage: 1, classCount: 0, skippedClassCount: 0
+    }
+
+    while (currentDate.isSameOrBefore(endDate)) {
+      let stat = getStudentStatRanges(timetables, passages, currentDate.format("DD.MM.YY"), ignoredLessons);
+      totalStats.minutes += stat.total.minutes;
+      totalStats.percentage += stat.total.percentage;
+      totalStats.classCount += stat.total.classCount;
+      totalStats.skippedClassCount += stat.total.skippedClassCount;
+      stats[currentDate.format("DD.MM.YY")] = stat;
+
+      currentDate.add(1, 'day');
+    }
+
+    return { days: stats, total: totalStats };
+}
+
+export function getStudentGroupStatRanges(students, timetables, passages, date, ignoredLessons = []) {
+    let stats = {};
+
+    let totalStats = {
+        minutes: 0, percentage: 0, classCount: 0, skippedClassCount: 0
+    }
+
+    students.forEach(student => {
+        let studentPassages = passages.filter(x => x.student_id == student.id);
+        let studentTimetables = timetables.filter(x => x.group_id == student.group_id);
+        let stat = getStudentStatRanges(studentTimetables, studentPassages, date, ignoredLessons);
+
+        totalStats.minutes += stat.total.minutes;
+        totalStats.percentage += stat.total.percentage;
+        totalStats.classCount += stat.total.classCount;
+        totalStats.skippedClassCount += stat.total.skippedClassCount;
+        stats[student.id] = stat;
+    });
+
+    totalStats.percentage /= students.length;
+
+    return { students: stats, total: totalStats };
+}
+
+export function getStudentGroupStatRangesPeriod(students, timetables, passages, period, ignoredLessons = []) {
+    let stats = {};
+    let currentDate = moment(period.start, "DD.MM.YY");
+    let endDate = moment(period.end, "DD.MM.YY");
+
+    let totalStats = {
+        minutes: 0, percentage: 0, classCount: 0, skippedClassCount: 0
+    }
+
+    while (currentDate.isSameOrBefore(endDate)) {
+      let stat = getStudentGroupStatRanges(students, timetables, passages, currentDate.format("DD.MM.YY"), ignoredLessons);
+      totalStats.minutes += stat.total.minutes;
+      totalStats.percentage += stat.total.percentage;
+      totalStats.classCount += stat.total.classCount;
+      totalStats.skippedClassCount += stat.total.skippedClassCount;
+      stats[currentDate.format("DD.MM.YY")] = stat;
+
+      currentDate.add(1, 'day');
+    }
+
+    totalStats.percentage /= (moment(period.end, "DD.MM.YY").diff(moment(period.start, "DD.MM.YY"), "days") + 1);
+
+    return { days: stats, total: totalStats };
+}
+
 export default {
-    getStudentStatRanges
+    getStudentStatRanges, getStudentStatRangesPeriod, getStudentGroupStatRanges, getStudentGroupStatRangesPeriod
 };

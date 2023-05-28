@@ -18,6 +18,7 @@ export default function LoginPage() {
             console.log(response.data);
             if (response.data.success == 1) {
                 const userData = response.data.user;
+                userData.is_admin = userData.is_admin.data[0] == 1
                 setUser(userData);
                 setRedirect(true);
             }

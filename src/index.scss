@@ -18,6 +18,10 @@
     color: var(--clr-text);
 }
 
+body {
+    overflow-x: hidden;
+}
+
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -92,6 +96,7 @@ input[type="text"], input[type="search"], input[type="password"] {
     top: 50%;
     left: 50%;
     translate: -50% -50%;
+    animation: fadeInAnimation .5s ease forwards;
 }
 
 .period-selector {
@@ -209,6 +214,7 @@ input[type="text"], input[type="search"], input[type="password"] {
     width: 100%;
     background-color: var(--clr-bg);
     justify-content: space-between;
+    height: 60px;    
 
     &__profile {
         display: flex;
@@ -232,6 +238,7 @@ input[type="text"], input[type="search"], input[type="password"] {
             text-decoration: none;
             padding: 1em;
             color: var(--clr-text);
+            animation: opacity .5s ease forwards;
 
             &.active {
                 background-color: white;
@@ -260,10 +267,41 @@ main {
     max-width: 800px;
     margin: auto;
     padding: 1em;
+
+    section {        
+        opacity: 0;
+        animation: opacity .3s ease forwards .3s;
+    }
 }
 
-h1, h2 {
+@keyframes header {
+    from {
+        translate: -100px 0;
+        opacity: 0;
+    }
+    to {
+        translate: 0px 0;
+        opacity: 1;
+    }
+}
+
+@keyframes opacity {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+h1 {
     margin-bottom: 1em;
+    animation: header .5s ease forwards;
+    opacity: 0;
+}
+
+h2 {
+    margin-bottom: 1em;   
 }
 
 .group-period {
@@ -316,10 +354,16 @@ h1, h2 {
             &__index {
                 width: 1.2em;
                 text-align: right;
+                color: var(--clr-accent);
             }
 
             &__fullname {
                 text-decoration: none;
+                color: var(--clr-text);
+
+                &:hover {
+                    text-decoration: underline;
+                }
             }
 
             &__progressbar[role="progressbar"] {
@@ -339,11 +383,11 @@ h1, h2 {
 
 @keyframes fadeInAnimation {
     0% {
-        translate: 0 8px;
+        transform: translate(0, 8px);
         opacity: 0;
     }
     100% {
-        translate: 0 0px;
+        translate: translate(0, 0px);
         opacity: 1;
     }
 }
@@ -508,6 +552,7 @@ h1, h2 {
 
 a {
     text-decoration: none;
+    color: var(--clr-accent);
 
     &:hover {
         text-decoration: underline;
@@ -533,6 +578,10 @@ a {
         display: grid;
         grid-template-columns: 300px auto;
         padding: .5em;
+
+        a {
+            color: var(--clr-text);
+        }
 
         &:nth-child(2n) {
             background-color: var(--clr-bg);
@@ -745,6 +794,7 @@ a {
             border: 2px solid var(--clr-accent);
             cursor: pointer;
             text-decoration: none;
+            color: var(--clr-text);
 
             &:hover {
                 scale: 1.1;
@@ -905,6 +955,17 @@ a {
     }
 }
 
+.cb-fake-data {
+    position: absolute;
+    right: 1em;
+    top: 5em;
+    opacity: 0;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
 .import-form {
     display: flex;
     flex-direction: column;
@@ -913,7 +974,7 @@ a {
 
     &__section {        
         display: grid;
-        grid-template-columns: 180px max-content min-content;
+        grid-template-columns: 180px 220px min-content auto;
         align-items: center;
         height: 2em;
         gap: .5em;

@@ -9,11 +9,11 @@ export default function GroupListPage() {
     const [userGroups, setUserGroups] = useState([]);
 
     useEffect(() => {
-        axios.get('/groups').then(response => { setGroups(response.data.data) });
     }, []);
 
     useEffect(() => {
         axios.get('/users/groups/' + user?.id ).then(response => { setUserGroups(response.data.data) });
+        axios.get('/groups').then(response => { setGroups(response.data.data) });
     }, [user]);
 
     let groupListToRender = []
@@ -21,9 +21,19 @@ export default function GroupListPage() {
     const generateGroupListByYear = () => {
         let userControlledGroup = groups;
 
-        if (!user?.is_admin) {            
+        if (groups.length == 0) {
+            groupListToRender = <section>Не найдено групп в базе данных. <Link to="/import">Ипортируйте</Link> файлы контингента.</section>
+            return;
+        }
+
+        if (user && !user.is_admin) {            
             let userGroupIds = userGroups.map(x => x.group_id);
             userControlledGroup = groups.filter(x => userGroupIds.includes(x.id));
+        }
+
+        if (userControlledGroup.length == 0) {
+            groupListToRender = <section>Для Вас еще не назначены группы.</section>
+            return;
         }
 
         for (let index = 1; index <= 4; index++) {
