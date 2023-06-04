@@ -15,17 +15,18 @@ export default function LoginPage() {
         const formData = { login, password };
         axios.post("/users/login", formData)
         .then((response) => {
-            console.log(response.data);
             if (response.data.success == 1) {
                 const userData = response.data.user;
                 userData.is_admin = userData.is_admin.data[0] == 1
                 setUser(userData);
                 setRedirect(true);
             }
+            else {
+                alert('Неверный логин или пароль!');
+            }
         })
         .catch((error) => {
             console.error(error);
-            // handle the error, like displaying an error message to the user
         });
     };
 
@@ -52,7 +53,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
-            <button type="submit">Login</button>
+            <button type="submit">Вход</button>
             </form>
         </div>
         </>        

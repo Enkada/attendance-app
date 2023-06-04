@@ -356,7 +356,7 @@ export default function ImportPage() {
                                         <>
                                         {importSections[section].counter > 0 ? <>
                                             <div className="import-form__section__counter">{importSections[section].getStatus()}</div>
-                                            <span className="material-icons btn" onClick={(e) => importSections[section].delete(e)}>delete</span>
+                                            <div className='btn--material-icons' onClick={(e) => importSections[section].delete(e)}><span className="material-icons btn" >delete</span><span>Удалить</span></div>
                                         </> : ""}                                        
                                         <input type="file" accept={importSections[section].accept} onChange={
                                             section == "xlsx" ? (e) => handleImportXLSX(e) : section == "htm" ? (e) => handleImportHTM(e) : (e) => handleImportDOCX(e)
@@ -366,7 +366,7 @@ export default function ImportPage() {
                                 :
                                     importSections[section].counter?.students > 0 || importSections[section].counter?.groups > 0 ? <>
                                         <div className="import-form__section__counter">{importSections[section].getStatus()}</div>
-                                        <span className="material-icons btn" onClick={(e) => importSections[section].delete(e)}>delete</span>
+                                        <div className='btn--material-icons' onClick={(e) => importSections[section].delete(e)}><span className="material-icons btn" >delete</span><span>Удалить</span></div>
                                     </>
                                     :
                                         <input type="file" accept={importSections[section].accept} onChange={

@@ -5,9 +5,10 @@ export default function PeriodSelector(props) {
     if (!props)
         return;
 
-    let { passages, timetables, onRangeChange, onYearChange, onMonthChange, isGroup } = props;
+    let { passages, timetables, onRangeChange, onCustomPeriodChange, onIsCustomPeriodChange, onYearChange, onMonthChange, isGroup } = props;
 
     const [isCustomPeriod, setIsCustomPeriod] = useState(false);
+    const [customPeriod, setCustomPeriod] = useState({ start: "2022-11-07", end: null });
     
     const [calendarYear, setCalendarYear] = useState(2022);
     const [calendarMonth, setCalendarMonth] = useState(10);
@@ -18,17 +19,30 @@ export default function PeriodSelector(props) {
         onRangeChange(newRange);
     };
 
+    useEffect(() => {
+        onIsCustomPeriodChange(isCustomPeriod);
+    }, [isCustomPeriod]);
+
+    const handleDateChange = (event, field) => {
+        const { value } = event.target;
+        setCustomPeriod(prevState => ({
+            ...prevState,
+            [field]: value,
+        }));
+        onCustomPeriodChange(event, field);
+    };
+
     return (
-        <div className="period-selector">
+        <div className="period-selector">            
             <div>
                 <input type="radio" name="range-input" value="custom" id="period-custom" checked={isCustomPeriod} onChange={(e) => setIsCustomPeriod(e.target.value === 'custom')}/>
                 <label htmlFor="period-custom">Свой период</label>
             </div>
             <div className={`custom-period ${!isCustomPeriod ? "hidden" : ""}`}>
                 <label htmlFor="period-custom__start">От</label>
-                <input type="date" id="period-custom__start" />
+                <input type="date" id="period-custom__start" value={customPeriod.start || ''} onChange={event => handleDateChange(event, 'start')}/>
                 <label htmlFor="period-custom__end">До</label>
-                <input type="date" id="period-custom__end" />
+                <input type="date" id="period-custom__end" value={customPeriod.end || ''} onChange={event => handleDateChange(event, 'end')}/>
             </div>
             <div>
                 <input type="radio" name="range-input" value="calendar" id="period-calendar" checked={!isCustomPeriod} onChange={(e) => setIsCustomPeriod(e.target.value === 'custom')}/>

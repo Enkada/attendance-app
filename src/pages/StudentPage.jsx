@@ -6,10 +6,17 @@ import PeriodSelector from './PeriodSelector';
 import $ from 'jquery';
 import {getStudentStatRanges} from './Statistics';
 
+const lessonPeriods = {
+    1: { start: "9:00", end: "10:30" },
+    2: { start: "10:45", end: "12:15" },
+    3: { start: "13:05", end: "14:35" },
+    4: { start: "14:50", end: "16:20" },
+    5: { start: "16:30", end: "18:00" },
+}
+
 function WeekStats(props) {
     if (!props)
         return;
-
 
     const [ignoredLessons, setIgnoredLessons] = useState([]);
 
@@ -17,30 +24,31 @@ function WeekStats(props) {
     let passages = props.passages;
 
     let passageListToRender = [];
-
-    const lessonPeriods = {
-        1: { start: "9:00", end: "10:30" },
-        2: { start: "10:45", end: "12:15" },
-        3: { start: "13:05", end: "14:35" },
-        4: { start: "14:50", end: "16:20" },
-        5: { start: "16:30", end: "18:00" },
-    }
-
     const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']        
-        
-    let startDate = props.range.start >= 1 ? moment([props.year, props.month, props.range.start]) : moment([props.year, props.month, 1]).subtract(-1 * props.range.start + 1, "days");
-    let daysInMonth = moment([props.year, props.month, 1]).daysInMonth();
-    let endDate = props.range.end <= daysInMonth ? moment([props.year, props.month, props.range.end]) : moment([props.year, props.month, daysInMonth]).add(props.range.end - daysInMonth, "days");
+     
+    let startDate, endDate, dayCount;
+
+    if (props.customPeriod) {
+        startDate = moment(props.customPeriod.start);
+        endDate = moment(props.customPeriod.end);
+        dayCount = endDate.diff(startDate, "days");
+        console.log("DAY COUNT", dayCount);
+    }
+    else {
+        startDate = props.range.start >= 1 ? moment([props.year, props.month, props.range.start]) : moment([props.year, props.month, 1]).subtract(-1 * props.range.start + 1, "days");
+        let daysInMonth = moment([props.year, props.month, 1]).daysInMonth();
+        endDate = props.range.end <= daysInMonth ? moment([props.year, props.month, props.range.end]) : moment([props.year, props.month, daysInMonth]).add(props.range.end - daysInMonth, "days");  
+        dayCount = 5;
+    }
     
-    let periodPassages = passages.filter(x => moment(x.datetime).isBetween(startDate, endDate, null, '[true, true]'));
+    let periodPassages = passages.filter(x => moment(x.datetime).isBetween(startDate, endDate, 'day', '[true, true]'));
+
     let periodLessons = new Set();
 
     if (!periodPassages.length) {
         passageListToRender.push(<div key="noData" className='no-data'>Нет данных за указанный период</div>);
         return passageListToRender;
     }
-
-    console.log(passages);
 
     function getClassBlock(classes, dayLessons, index) { 
         let lesson = dayLessons.find(x => x.index == index);
@@ -73,8 +81,9 @@ function WeekStats(props) {
         minutes: 0, percentage: 1, classCount: 0, skippedClassCount: 0
     }
 
-    for (let index = 0; index <= 5; index++) {
+    for (let index = 0; index <= dayCount; index++) {
         let date = startDate.clone().add(index, "days");
+        let isSunday = date.day() == 0;
 
         let dayPassages = periodPassages.filter(x => moment(x.datetime).isSame(date, "day"));
 
@@ -84,7 +93,11 @@ function WeekStats(props) {
         let dayLessons = timetables.filter(timetable => moment(timetable.date).isSame(moment(date), 'day'));
         
         let statList = [];
-        if (dayPassages.length > 0 && dayLessons.length > 0) {
+
+        if (isSunday) {
+            statList.push(<div key="noLessons" className='no-data'>Выходной день</div>)
+        }
+        else if (dayPassages.length > 0 && dayLessons.length > 0) {
             if (!isNaN(total.percentage)) {
                 statList.push(<React.Fragment key={0}>
                     <div key="classCount">{total.classCount - total.skippedClassCount} / {total.classCount}</div>
@@ -96,11 +109,14 @@ function WeekStats(props) {
                 weekStats.skippedClassCount += total.skippedClassCount;
             }
         }
-        else if (!dayPassages.length) {
-            statList.push(<div key="noPassages" className='no-data'>Нет данных о проходах</div>)
+        else if (!dayPassages.length && !dayLessons.length) {
+            statList.push(<div key="noLessons" className='no-data'>Нет данных</div>)
         }
         else if (!dayLessons.length) {
             statList.push(<div key="noLessons" className='no-data'>Нет данных о расписании</div>)
+        }
+        else {            
+            statList.push(<div key="noPassages" className='no-data'>Нет данных о проходах</div>)
         }
 
         let passageLines = [];
@@ -139,10 +155,10 @@ function WeekStats(props) {
         }
 
         passageListToRender.push(
-            <div className='week-stat__day' key={index} id={`stat-day-${index}`} style={{['--skipped']: total.skippedClassCount}}>
+            <div className={`week-stat__day ${!!isSunday && "sunday"}`} key={index} id={`stat-day-${index}`} style={{['--skipped']: total.skippedClassCount}}>
                 <div className="week-stat__day__header">                    
                     <div className="week-stat__day__header__date">
-                        <div>{dayNames[index]}</div>
+                        <div>{dayNames[index % 7]}</div>
                         <div>{date.format('DD.MM.YY')}</div>
                     </div>
                     <div className="week-stat__day__header__stat-list">{statList}</div>
@@ -226,6 +242,11 @@ function WeekStats(props) {
         }
     };
 
+    const handleCheckSingle = (allLessons, lesson) => {
+        setIgnoredLessons(Array.from(allLessons).filter(l => l !== lesson));
+        console.log(ignoredLessons)
+    };
+
     const handleToggleGraphAll = () => {
         $('.week-stat__day .week-stat__day__graph').each(function() {
             $(this).slideToggle();
@@ -258,12 +279,19 @@ function WeekStats(props) {
                 <div onClick={handleToggleIgnoredList} id='btn-toggle-ignored' className='btn--material-icons'><span className='material-icons'>rule</span>Игнорируемые предметы </div>
             </div>
             <div className="ignored-lessons" style={{['display']: "none"}}>
+                <div className="ignored-lessons__list">
                 {Array.from(periodLessons).map((lesson, index) => (
                     <div key={index}>
-                        <input type='checkbox' id={"cb-lesson-" + index} value={lesson} onChange={(e) => handleCheckboxChange(lesson, e.target.checked)}></input>
+                        <span className='btn material-icons' onClick={(e) => handleCheckSingle(periodLessons, lesson)}>playlist_add_check</span>
+                        <input type='checkbox' id={"cb-lesson-" + index} checked={ignoredLessons.includes(lesson)} value={lesson} onChange={(e) => handleCheckboxChange(lesson, e.target.checked)}></input>
                         <label htmlFor={"cb-lesson-" + index}>{lesson}</label>
                     </div>
                 ))}
+                </div>
+                <div className="btn-list">
+                    <div onClick={() => {setIgnoredLessons([])}} className='btn--material-icons btn-uncheck-all'><span className='material-icons'>playlist_remove</span>Снять выделение</div>
+                    <div onClick={() => {setIgnoredLessons(Array.from(periodLessons))}} className='btn--material-icons btn-uncheck-all'><span className='material-icons'>checklist</span>Выбрать все</div>
+                </div>
             </div>
             <div className="week-stat">
                 <div className="week-stat__header">
@@ -285,7 +313,8 @@ export default function StudentPage() {
     const [timetables, setTimetables] = useState([]);
     const { id } = useParams();
     
-    //const [isCustomPeriod, setIsCustomPeriod] = useState(false);
+    const [isCustomPeriod, setIsCustomPeriod] = useState(false);
+    const [customPeriod, setCustomPeriod] = useState({ start: "2022-11-07", end: null });
     
     const [calendarYear, setCalendarYear] = useState(2022);
     const [calendarMonth, setCalendarMonth] = useState(10);
@@ -304,6 +333,18 @@ export default function StudentPage() {
         setCalendarMonth(newMonth);
     };
 
+    const handleIsCustomPeriodChange = (isCustom) => {
+        setIsCustomPeriod(isCustom);
+    };
+
+    const handleCustomPeriodChange = (event, field) => {
+        const { value } = event.target;
+        setCustomPeriod(prevState => ({
+            ...prevState,
+            [field]: value,
+        }));
+    };
+
     useEffect(() => {
         axios.get(`/students/${id}`).then(response => {
             setStudent(response.data.data);
@@ -318,10 +359,15 @@ export default function StudentPage() {
     }, []);    
 
     const getStatRangeText = () => {
-        let startDate = range.start >= 1 ? moment([calendarYear, calendarMonth, range.start]) : moment([calendarYear, calendarMonth, 1]).subtract(-1 * range.start + 1, "days");
-        let daysInMonth = moment([calendarYear, calendarMonth, 1]).daysInMonth();
-        let endDate = range.end <= daysInMonth ? moment([calendarYear, calendarMonth, range.end]) : moment([calendarYear, calendarMonth, daysInMonth]).add(range.end - daysInMonth, "days");
-        return (<>{startDate.format('DD.MM.YYYY')} - {endDate.format('DD.MM.YYYY')}</>)
+        if (!isCustomPeriod) {
+            let startDate = range.start >= 1 ? moment([calendarYear, calendarMonth, range.start]) : moment([calendarYear, calendarMonth, 1]).subtract(-1 * range.start + 1, "days");
+            let daysInMonth = moment([calendarYear, calendarMonth, 1]).daysInMonth();
+            let endDate = range.end <= daysInMonth ? moment([calendarYear, calendarMonth, range.end]) : moment([calendarYear, calendarMonth, daysInMonth]).add(range.end - daysInMonth, "days");
+            return (<>{startDate.format('DD.MM.YYYY')} - {endDate.format('DD.MM.YYYY')}</>)
+        }
+        else {
+            return (<>{moment(customPeriod.start).format('DD.MM.YYYY')} - {moment(customPeriod.end).format('DD.MM.YYYY')}</>)
+        }
     }
 
     return (
@@ -332,15 +378,27 @@ export default function StudentPage() {
             </div>
             
             <section>
-                <h2>Проходы студента</h2>
-                <PeriodSelector timetables={timetables} passages={passages} onYearChange={handleYearChange} onMonthChange={handleMonthChange} onRangeChange={handleRangeChange}></PeriodSelector>
+                <center><h2>Проходы студента</h2></center>
+                <PeriodSelector timetables={timetables} passages={passages} onCustomPeriodChange={handleCustomPeriodChange} onIsCustomPeriodChange={handleIsCustomPeriodChange} onYearChange={handleYearChange} onMonthChange={handleMonthChange} onRangeChange={handleRangeChange}></PeriodSelector>
                 
                 
             </section>
-            <section>
-                <h2>Статистика за период {getStatRangeText()}</h2>
-                <WeekStats timetables={timetables} passages={passages} year={calendarYear} month={calendarMonth} range={range}></WeekStats>                
-            </section>
+            {!isCustomPeriod ?
+                <section>
+                    <h2>Статистика за период {getStatRangeText()}</h2>
+                    <WeekStats timetables={timetables} passages={passages} year={calendarYear} month={calendarMonth} range={range}></WeekStats>                
+                </section> 
+            : customPeriod.start && customPeriod.end ?
+                moment(customPeriod.start).isSameOrBefore(moment(customPeriod.end), "day") ?
+                    <section>
+                        <h2>Статистика за период {getStatRangeText()}</h2>
+                        <WeekStats timetables={timetables} passages={passages} customPeriod={customPeriod}></WeekStats>
+                    </section> 
+                :
+                    <span>Неверно выбран период</span>
+            : 
+                <span>Выберите период</span>
+            }
         </>
     )
 }

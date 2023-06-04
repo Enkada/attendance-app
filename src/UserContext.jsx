@@ -11,7 +11,7 @@ export function UserContextProvider({children}) {
     useEffect(() => {
         if (!user) {
             axios.get('/user').then(({data}) => {
-                if (!data) {                    
+                if (!data || data == "EXPIRED") {                    
                     setReady(true);
                     return;
                 }

@@ -40,21 +40,56 @@ section + section {
     display: flex;
     gap: 1em;
     margin-bottom: 1em;
+
+    @media (width < 400px) {
+        .btn--material-icons {
+            width: 24px;
+            height: 24px;
+            overflow: hidden;
+        }
+    }
 }
 
 .ignored-lessons {
-    display: flex;
-    flex-direction: column;
-    gap: .2em;
-    padding: 1em;
     border: 1px solid var(--clr-accent);
     margin-bottom: 1em;
     background-color: var(--clr-bg);
 
-    & > div {
-        display: flex;
-        gap: .5em;
+    .btn-list {
+        margin: 0;
+        background-image: var(--gradient);
+        border-top: 1px solid var(--clr-accent);
+        padding: .5em;
     }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        gap: .2em;
+        padding: .5em;
+
+        & > div {
+            display: flex;
+            gap: .5em;
+            align-items: center;
+    
+            
+            span {
+                opacity: .5;
+    
+                &:hover {
+                    opacity: 1;
+                }
+            }
+        }
+    }
+
+    .btn-uncheck-all {
+        span {
+            opacity: 1;
+        }
+    }    
 }
 
 .btn--material-icons {
@@ -214,7 +249,14 @@ input[type="text"], input[type="search"], input[type="password"] {
     width: 100%;
     background-color: var(--clr-bg);
     justify-content: space-between;
-    height: 60px;    
+    height: 60px;   
+    
+    @media (width < 400px) {
+        
+        &__profile__name {
+            display: none;
+        }
+    }
 
     &__profile {
         display: flex;
@@ -263,10 +305,20 @@ header {
     margin-bottom: 1em;
 }
 
+footer {
+    color: rgb(192, 192, 192);
+    background-color: var(--clr-bg);
+    padding: 1em;
+    margin-top: 4em;
+    text-align: center;
+}
+
 main {
     max-width: 800px;
     margin: auto;
     padding: 1em;
+    min-height: calc(100vh - 60px - 1em - 133px);
+    margin-bottom: 4em;
 
     section {        
         opacity: 0;
@@ -317,6 +369,7 @@ h2 {
     --grid: 85px 85px 100px 60px auto;
     border: 1px solid var(--clr-accent);
     margin-bottom: 1em;
+    overflow-x: auto;
 
     &__header {
         display: grid;
@@ -326,11 +379,19 @@ h2 {
         text-align: center;
         font-weight: bold;
         align-items: center;
+        
+        @media (width < 400px) {            
+            width: fit-content;
+        }
     }
     
     &__list {
         display: flex;
         flex-direction: column;
+        
+        @media (width < 400px) {            
+            width: fit-content;
+        }
 
         .student {
             display: grid;
@@ -339,6 +400,10 @@ h2 {
             align-items: center;
             padding: .2em;
             width: 100%;
+
+            &.ignored * {
+                color: hsl(0, 0%, 70%);
+            }
 
             &__stat-list {
                 display: grid;
@@ -579,6 +644,11 @@ a {
         grid-template-columns: 300px auto;
         padding: .5em;
 
+        @media (width < 400px) {
+            
+            grid-template-columns: auto max-content;
+        }
+
         a {
             color: var(--clr-text);
         }
@@ -591,6 +661,11 @@ a {
 
 .week-stat {
     border: 1px solid var(--clr-accent);
+    overflow-x: auto;
+
+    @media (width < 400px) {
+        margin-inline: -1em;
+    }
     
     &__header {        
         display: grid;
@@ -599,6 +674,10 @@ a {
         text-align: center;
         font-weight: bold;
         padding: .5em;
+        
+        @media (width < 400px) {            
+            width: fit-content;
+        }
     }
 
     &__day-list {
@@ -611,6 +690,18 @@ a {
         flex-direction: column;
         gap: .5em;
         padding: .5em;
+
+        &.sunday {
+            background-color: var(--clr-bg);
+
+            .week-stat__day__header__date div {
+                color: var(--clr-red);
+            }
+        }
+
+        @media (width < 400px) {            
+            width: fit-content;
+        }
 
         &.total {
             background-image: var(--gradient);
@@ -807,8 +898,13 @@ a {
     width: fit-content;
     margin: auto;
     border: 1px solid var(--clr-accent);
-    padding: 1em;
     --gap: 3px;
+    --size: 40px;
+
+    @media (width < 400px) {
+        --gap: 1px;
+        --size: 32px;
+    }
     
     &.hidden {
         display: none;
@@ -817,14 +913,21 @@ a {
     &__header {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 1em;
+        background-image: var(--gradient);
+        padding: 1em;
+
+        input, select {
+            border: 1px solid var(--clr-accent);
+        }
 
         input[type="number"] {
             width: 50px;
+            text-align: center;
         }
     }
 
-    &__grid {
+    &__grid {        
+        padding: 1em;
     }
 
     &__day-names {
@@ -866,13 +969,31 @@ a {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 40px;
+        width: var(--size);
         aspect-ratio: 1 / 1;
         border: 1px solid var(--clr-accent);
         border-radius: 4px;
 
         &.has-data {
             background-image: var(--gradient);
+
+            &:hover {
+                &::after {
+                    display: block;
+                }
+            }
+
+            &::after {
+                content: "Eсть проходы и расписание";
+                display: none;
+                position: absolute;
+                padding: .5em;
+                border: 1px solid var(--clr-accent);
+                translate: -50% -50%;
+                box-shadow: 1px 1px 4px hsla(0, 0%, 50%, 0.5);
+                border-radius: .5em .5em 0 .5em;
+                background-image: var(--gradient);
+            }
         }
 
         &.no-data {
@@ -941,6 +1062,8 @@ a {
     display: flex;
     justify-content: space-between;
     margin-bottom: 2em;
+    flex-wrap: wrap;
+    gap: .5em;
 
     &__name {
         font-size: 2em;
@@ -974,16 +1097,59 @@ a {
 
     &__section {        
         display: grid;
-        grid-template-columns: 180px 220px min-content auto;
+        grid-template-columns: 185px 220px 100px auto;
         align-items: center;
-        height: 2em;
         gap: .5em;
+        border: 1px solid var(--clr-accent);
+
+        @media (width < 800px) {
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            align-items: start;
+            width: 220px;
+            margin: auto;
+            padding-bottom: .5em;
+
+            & > * {
+                padding-inline: .5em;
+            }
+            
+            &__title {
+                width: 100%;
+                padding: .5em;
+                border-right: none !important;
+            }
+
+            input {
+                width: 128px;
+            }
+        }
+
+        &__counter {
+            animation: import .8s ease;
+        }
+
 
         &__title {                    
             display: flex;
+            background-color: var(--clr-bg);
+            border-right: 1px solid var(--clr-accent);
+            padding: .5em;
             align-items: center;
             gap: .5em;
         }
+    }
+}
+
+@keyframes import {
+    0% {
+        color: green;
+        scale: 1.2;
+    }
+    100% {
+        color: var(--clr-text);
+        scale: 1;
     }
 }
 
@@ -1064,6 +1230,7 @@ button {
 .timetable {
     display: flex;
     gap: 1em;
+    flex-wrap: wrap;
 
     .week {
         display: grid;

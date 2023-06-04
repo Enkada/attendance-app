@@ -40,19 +40,45 @@ section + section {
   gap: 1em;
   margin-bottom: 1em;
 }
+@media (width < 400px) {
+  .btn-list .btn--material-icons {
+    width: 24px;
+    height: 24px;
+    overflow: hidden;
+  }
+}
 
 .ignored-lessons {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2em;
-  padding: 1em;
   border: 1px solid var(--clr-accent);
   margin-bottom: 1em;
   background-color: var(--clr-bg);
 }
-.ignored-lessons > div {
+.ignored-lessons .btn-list {
+  margin: 0;
+  background-image: var(--gradient);
+  border-top: 1px solid var(--clr-accent);
+  padding: 0.5em;
+}
+.ignored-lessons__list {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  gap: 0.2em;
+  padding: 0.5em;
+}
+.ignored-lessons__list > div {
   display: flex;
   gap: 0.5em;
+  align-items: center;
+}
+.ignored-lessons__list > div span {
+  opacity: 0.5;
+}
+.ignored-lessons__list > div span:hover {
+  opacity: 1;
+}
+.ignored-lessons .btn-uncheck-all span {
+  opacity: 1;
 }
 
 .btn--material-icons {
@@ -185,6 +211,11 @@ input[type=text], input[type=search], input[type=password] {
   justify-content: space-between;
   height: 60px;
 }
+@media (width < 400px) {
+  .nav__profile__name {
+    display: none;
+  }
+}
 .nav__profile {
   display: flex;
   padding: 1em;
@@ -224,10 +255,20 @@ header {
   margin-bottom: 1em;
 }
 
+footer {
+  color: rgb(192, 192, 192);
+  background-color: var(--clr-bg);
+  padding: 1em;
+  margin-top: 4em;
+  text-align: center;
+}
+
 main {
   max-width: 800px;
   margin: auto;
   padding: 1em;
+  min-height: calc(100vh - 60px - 1em - 133px);
+  margin-bottom: 4em;
 }
 main section {
   opacity: 0;
@@ -275,6 +316,7 @@ h2 {
   --grid: 85px 85px 100px 60px auto;
   border: 1px solid var(--clr-accent);
   margin-bottom: 1em;
+  overflow-x: auto;
 }
 .student-table__header {
   display: grid;
@@ -285,9 +327,21 @@ h2 {
   font-weight: bold;
   align-items: center;
 }
+@media (width < 400px) {
+  .student-table__header {
+    width: -moz-fit-content;
+    width: fit-content;
+  }
+}
 .student-table__list {
   display: flex;
   flex-direction: column;
+}
+@media (width < 400px) {
+  .student-table__list {
+    width: -moz-fit-content;
+    width: fit-content;
+  }
 }
 .student-table__list .student {
   display: grid;
@@ -296,6 +350,9 @@ h2 {
   align-items: center;
   padding: 0.2em;
   width: 100%;
+}
+.student-table__list .student.ignored * {
+  color: hsl(0, 0%, 70%);
 }
 .student-table__list .student__stat-list {
   display: grid;
@@ -489,6 +546,11 @@ a:hover {
   grid-template-columns: 300px auto;
   padding: 0.5em;
 }
+@media (width < 400px) {
+  .student-search__student {
+    grid-template-columns: auto max-content;
+  }
+}
 .student-search__student a {
   color: var(--clr-text);
 }
@@ -498,6 +560,12 @@ a:hover {
 
 .week-stat {
   border: 1px solid var(--clr-accent);
+  overflow-x: auto;
+}
+@media (width < 400px) {
+  .week-stat {
+    margin-inline: -1em;
+  }
 }
 .week-stat__header {
   display: grid;
@@ -506,6 +574,12 @@ a:hover {
   text-align: center;
   font-weight: bold;
   padding: 0.5em;
+}
+@media (width < 400px) {
+  .week-stat__header {
+    width: -moz-fit-content;
+    width: fit-content;
+  }
 }
 .week-stat__day-list {
   display: flex;
@@ -516,6 +590,18 @@ a:hover {
   flex-direction: column;
   gap: 0.5em;
   padding: 0.5em;
+}
+.week-stat__day.sunday {
+  background-color: var(--clr-bg);
+}
+.week-stat__day.sunday .week-stat__day__header__date div {
+  color: var(--clr-red);
+}
+@media (width < 400px) {
+  .week-stat__day {
+    width: -moz-fit-content;
+    width: fit-content;
+  }
 }
 .week-stat__day.total {
   background-image: var(--gradient);
@@ -673,8 +759,14 @@ a:hover {
   width: fit-content;
   margin: auto;
   border: 1px solid var(--clr-accent);
-  padding: 1em;
   --gap: 3px;
+  --size: 40px;
+}
+@media (width < 400px) {
+  .calendar {
+    --gap: 1px;
+    --size: 32px;
+  }
 }
 .calendar.hidden {
   display: none;
@@ -682,10 +774,18 @@ a:hover {
 .calendar__header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1em;
+  background-image: var(--gradient);
+  padding: 1em;
+}
+.calendar__header input, .calendar__header select {
+  border: 1px solid var(--clr-accent);
 }
 .calendar__header input[type=number] {
   width: 50px;
+  text-align: center;
+}
+.calendar__grid {
+  padding: 1em;
 }
 .calendar__day-names {
   display: grid;
@@ -717,12 +817,26 @@ a:hover {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 40px;
+  width: var(--size);
   aspect-ratio: 1/1;
   border: 1px solid var(--clr-accent);
   border-radius: 4px;
 }
 .calendar__day.has-data {
+  background-image: var(--gradient);
+}
+.calendar__day.has-data:hover::after {
+  display: block;
+}
+.calendar__day.has-data::after {
+  content: "Eсть проходы и расписание";
+  display: none;
+  position: absolute;
+  padding: 0.5em;
+  border: 1px solid var(--clr-accent);
+  translate: -50% -50%;
+  box-shadow: 1px 1px 4px hsla(0, 0%, 50%, 0.5);
+  border-radius: 0.5em 0.5em 0 0.5em;
   background-image: var(--gradient);
 }
 .calendar__day.no-data {
@@ -775,6 +889,8 @@ a:hover {
   display: flex;
   justify-content: space-between;
   margin-bottom: 2em;
+  flex-wrap: wrap;
+  gap: 0.5em;
 }
 .student-title__name {
   font-size: 2em;
@@ -805,17 +921,56 @@ a:hover {
 }
 .import-form__section {
   display: grid;
-  grid-template-columns: 180px 220px min-content auto;
+  grid-template-columns: 185px 220px 100px auto;
   align-items: center;
-  height: 2em;
   gap: 0.5em;
+  border: 1px solid var(--clr-accent);
+}
+@media (width < 800px) {
+  .import-form__section {
+    display: flex;
+    flex-direction: column;
+    height: -moz-fit-content;
+    height: fit-content;
+    align-items: start;
+    width: 220px;
+    margin: auto;
+    padding-bottom: 0.5em;
+  }
+  .import-form__section > * {
+    padding-inline: 0.5em;
+  }
+  .import-form__section__title {
+    width: 100%;
+    padding: 0.5em;
+    border-right: none !important;
+  }
+  .import-form__section input {
+    width: 128px;
+  }
+}
+.import-form__section__counter {
+  animation: import 0.8s ease;
 }
 .import-form__section__title {
   display: flex;
+  background-color: var(--clr-bg);
+  border-right: 1px solid var(--clr-accent);
+  padding: 0.5em;
   align-items: center;
   gap: 0.5em;
 }
 
+@keyframes import {
+  0% {
+    color: green;
+    scale: 1.2;
+  }
+  100% {
+    color: var(--clr-text);
+    scale: 1;
+  }
+}
 .loading::after {
   content: "";
   margin-left: 0.1em;
@@ -882,6 +1037,7 @@ button.red {
 .timetable {
   display: flex;
   gap: 1em;
+  flex-wrap: wrap;
 }
 .timetable .week {
   display: grid;

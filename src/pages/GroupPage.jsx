@@ -33,6 +33,9 @@ export default function GroupPage() {
         }
     };
 
+    const [isCustomPeriod, setIsCustomPeriod] = useState(false);
+    const [customPeriod, setCustomPeriod] = useState({ start: "2022-11-07", end: null });
+
     const handleCheckboxChange = (student, isChecked) => {
         if (isChecked) {
             setIgnoredStudents(prevIgnoredStudents => [...prevIgnoredStudents, student]);
@@ -104,9 +107,19 @@ export default function GroupPage() {
     students.forEach((student, index) => {
         let studentPassages = passages.filter(x => x.student_id == student.id);
         
-        let startDate = range.start >= 1 ? moment([calendarYear, calendarMonth, range.start]) : moment([calendarYear, calendarMonth, 1]).subtract(-1 * range.start + 1, "days");
-        let daysInMonth = moment([calendarYear, calendarMonth, 1]).daysInMonth();
-        let endDate = range.end <= daysInMonth ? moment([calendarYear, calendarMonth, range.end]) : moment([calendarYear, calendarMonth, daysInMonth]).add(range.end - daysInMonth, "days");
+        let startDate, endDate, dayCount;
+        if (isCustomPeriod) {
+            startDate = moment(customPeriod.start);
+            endDate = moment(customPeriod.end);
+            dayCount = endDate.diff(startDate, "days");
+            console.log("DAY COUNT", dayCount);
+        }
+        else {
+            startDate = range.start >= 1 ? moment([calendarYear, calendarMonth, range.start]) : moment([calendarYear, calendarMonth, 1]).subtract(-1 * range.start + 1, "days");
+            let daysInMonth = moment([calendarYear, calendarMonth, 1]).daysInMonth();
+            endDate = range.end <= daysInMonth ? moment([calendarYear, calendarMonth, range.end]) : moment([calendarYear, calendarMonth, daysInMonth]).add(range.end - daysInMonth, "days");
+            dayCount = 5;
+        }
         
         let total = { minutes: 0, classCount: 0, skippedClassCount: 0 };
         if (studentPassages.length > 0) {            
@@ -119,7 +132,7 @@ export default function GroupPage() {
             }
             
         }
-        else if (isFakeDataDisplayed && (Math.random() > .2)) {
+        else if (isFakeDataDisplayed && (![7, 8, 12, 21, 23].includes(index + 1))) {
             total.minutes += Math.round(Math.random() * (1070 - 270)) + 270;
             total.skippedClassCount += Math.round((1170 - total.minutes) / 90);
             total.classCount += 13;
@@ -134,7 +147,7 @@ export default function GroupPage() {
             totalPercentage += total.minutes / (total.classCount * 90);
 
         studentList.push(
-            <div className="student" key={student.id} style={{['--skipped']: total.skippedClassCount}}>
+            <div className={`student ${ignoredStudents.includes(student.fullname) ? "ignored" : ""}`} key={student.id} style={{['--skipped']: total.skippedClassCount}}>
                 <div className="student__index">{index + 1}</div>
                 <Link to={`/student/${student.id}/${translit(student.fullname)}`} className="student__fullname" key={student.id}>{student.fullname}</Link>
                 {(!!passages.length && !!timetables.length) &&
@@ -155,23 +168,48 @@ export default function GroupPage() {
     });
 
     const getStatRangeText = () => {
-        let startDate = range.start >= 1 ? moment([calendarYear, calendarMonth, range.start]) : moment([calendarYear, calendarMonth, 1]).subtract(-1 * range.start + 1, "days");
-        let daysInMonth = moment([calendarYear, calendarMonth, 1]).daysInMonth();
-        let endDate = range.end <= daysInMonth ? moment([calendarYear, calendarMonth, range.end]) : moment([calendarYear, calendarMonth, daysInMonth]).add(range.end - daysInMonth, "days");
-        return (<>{startDate.format('DD.MM.YYYY')} - {endDate.format('DD.MM.YYYY')}</>)
+        if (!isCustomPeriod) {
+            let startDate = range.start >= 1 ? moment([calendarYear, calendarMonth, range.start]) : moment([calendarYear, calendarMonth, 1]).subtract(-1 * range.start + 1, "days");
+            let daysInMonth = moment([calendarYear, calendarMonth, 1]).daysInMonth();
+            let endDate = range.end <= daysInMonth ? moment([calendarYear, calendarMonth, range.end]) : moment([calendarYear, calendarMonth, daysInMonth]).add(range.end - daysInMonth, "days");
+            return (<>{startDate.format('DD.MM.YYYY')} - {endDate.format('DD.MM.YYYY')}</>)
+        }
+        else {
+            return (<>{moment(customPeriod.start).format('DD.MM.YYYY')} - {moment(customPeriod.end).format('DD.MM.YYYY')}</>)
+        }
     }
+
+    const handleIsCustomPeriodChange = (isCustom) => {
+        setIsCustomPeriod(isCustom);
+    };
+
+    const handleCustomPeriodChange = (event, field) => {
+        const { value } = event.target;
+        setCustomPeriod(prevState => ({
+            ...prevState,
+            [field]: value,
+        }));
+    };
 
     const handleToggleIgnoredList = () => {
         $('.ignored-lessons').slideToggle();
         $('#btn-toggle-ignored').toggleClass('active');
     };
 
+    const handleCheckSingle = (allLessons, lesson) => {
+        setIgnoredLessons(Array.from(allLessons).filter(l => l !== lesson));
+        console.log(ignoredLessons)
+    };
+
+    let hasData = passages.length && timetables.length;
+    let isCustomPeriodIncorrect = isCustomPeriod && !(customPeriod.start && customPeriod.end);
+
     return (
         <>
             <h1>Группа {name}</h1>
             <section>
-                <h2>Список студентов</h2>
-                {(!!passages.length && !!timetables.length) &&
+                {!!isCustomPeriodIncorrect && <div className='group-period'>Неверно выбран период</div>}
+                {!!(hasData && !isCustomPeriodIncorrect) &&
                 <>
                 <div className='group-period'>Статистика за период {getStatRangeText()}</div>
                 <input type="checkbox" className='cb-fake-data' onChange={(e) => {setIsFakeDataDisplayed(e.target.checked); console.log(e.target.checked);}}/>
@@ -180,20 +218,28 @@ export default function GroupPage() {
                     <div onClick={handleToggleIgnoredList} id='btn-toggle-ignored' className='btn--material-icons'><span className='material-icons'>rule</span>Игнорируемые предметы </div>
                 </div>
                 <div className="ignored-lessons" style={{['display']: "none"}}>
+                    <div className="ignored-lessons__list">
                     {Array.from(periodLessons).map((lesson, index) => (
                         <div key={index}>
-                            <input type='checkbox' id={"cb-lesson-" + index} value={lesson} onChange={(e) => handleLessonCheckboxChange(lesson, e.target.checked)}></input>
+                            <span className='btn material-icons' onClick={(e) => handleCheckSingle(periodLessons, lesson)}>playlist_add_check</span>
+                            <input type='checkbox' id={"cb-lesson-" + index} value={lesson} checked={ignoredLessons.includes(lesson)} onChange={(e) => handleLessonCheckboxChange(lesson, e.target.checked)}></input>
                             <label htmlFor={"cb-lesson-" + index}>{lesson}</label>
                         </div>
-                    ))}
+                    ))}      
+                    </div>                  
+                    <div className="btn-list">
+                        <div onClick={() => {setIgnoredLessons([])}} className='btn--material-icons btn-uncheck-all'><span className='material-icons'>playlist_remove</span>Снять выделение</div>
+                        <div onClick={() => {setIgnoredLessons(Array.from(periodLessons))}} className='btn--material-icons btn-uncheck-all'><span className='material-icons'>checklist</span>Выбрать все</div>
+                    </div>
                 </div>
                 </>
-                }
+                }                
+                <h2>Список студентов</h2>
                 <div className="student-table">
                     <div className="student-table__header">
                         <div>№</div>
                         <div>ФИО</div>
-                        {(!!passages.length || !!timetables.length) && <>
+                        {!!(hasData && !isCustomPeriodIncorrect) &&  <>
                         <div>Посещено</div>
                         <div>Пропущено</div>
                         <div>Посещено, мин.</div>
@@ -207,8 +253,8 @@ export default function GroupPage() {
                 
             </section>
             {(!!passages.length && !!timetables.length) && <section>
-                <h2>Выбор периода</h2>
-                <PeriodSelector timetables={timetables} passages={passages} isGroup={true} onYearChange={handleYearChange} onMonthChange={handleMonthChange} onRangeChange={handleRangeChange}></PeriodSelector>
+                <h2><center>Выбор периода</center></h2>
+                <PeriodSelector timetables={timetables} passages={passages} onCustomPeriodChange={handleCustomPeriodChange} onIsCustomPeriodChange={handleIsCustomPeriodChange} isGroup={true} onYearChange={handleYearChange} onMonthChange={handleMonthChange} onRangeChange={handleRangeChange}></PeriodSelector>
             </section>}
             <section>
                 <h2>Расписание группы</h2>
