@@ -22,7 +22,7 @@ export default function GroupListPage() {
         let userControlledGroup = groups;
 
         if (groups.length == 0) {
-            groupListToRender = <section>Не найдено групп в базе данных. <Link to="/import">Ипортируйте</Link> файлы контингента.</section>
+            groupListToRender = <section>Не найдено групп в базе данных. <Link to="/import">Импортируйте</Link> файлы контингента.</section>
             return;
         }
 

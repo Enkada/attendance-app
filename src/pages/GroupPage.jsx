@@ -258,7 +258,7 @@ export default function GroupPage() {
             </section>}
             <section>
                 <h2>Расписание группы</h2>
-                {timetables.length ? <GroupTimetable/> : <span>Расписание не найдено. <Link to="/import">Ипортируйте</Link> файлы расписания занятий.</span>}                
+                {timetables.length ? <GroupTimetable/> : <span>Расписание не найдено. <Link to="/import">Импортируйте</Link> файлы расписания занятий.</span>}                
             </section>
         </>
     )
