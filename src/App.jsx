@@ -26,7 +26,7 @@ function App() {
                     <Route path="/student/:id/:name" element={<StudentPage/>}/>
                     <Route path="/students" element={<StudentListPage/>}/>
                 </Route>
-                <Route path="*" element={<div>404 Not Found</div>}/>
+                <Route path="*" element={<h1>404 Not Found</h1>}/>
             </Routes>
         </UserContextProvider>
     )
